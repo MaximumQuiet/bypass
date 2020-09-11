@@ -58,13 +58,31 @@ class BypassSolution:
     def __init__(self, solution_id: str, token: str, manager: "BypassManager") -> None:
         """Base constructor
 
+        TODO: add solution expiration? May be useful with ReCaptcha, as it has a limited lifetime.
+
+        Solution id and token shouldn't be None, as it comes from captcha service providers,
+        and we want to avoid incorrect values.
+
+        Also, the solution should have an ID for the reporting feature. However, reporting is just a contract,
+        and some Bypass implementations may not support this feature.
+
         :param solution_id: solution id
         :param token: bypass solution - token, text, etc
         :param manager: callback to report captcha is invalid
         """
+        if solution_id is None:
+            raise ValueError("Solution id can't be set to None")
+
+        if token is None:
+            raise ValueError("Solution token can't be set to None")
+
         self._solution_id = solution_id
         self._token = token
         self._manager = manager
+
+    @property
+    def token(self) -> str:
+        return self._token
 
     def report_valid(self) -> None:
         """Reports solution with specified id is valid"""
