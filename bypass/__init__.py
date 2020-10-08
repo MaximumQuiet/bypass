@@ -59,7 +59,7 @@ class BypassManager(ABC):
 class BypassSolution:
     """Holder for Bypass solve result."""
 
-    _id: str
+    id: str
     token: str
 
     def __post_init__(self) -> None:
@@ -67,5 +67,5 @@ class BypassSolution:
         and may contain incorrect values.
         """
 
-        if None in [self._id, self.token]:
-            raise ValueError(f"bypass solution should have an id and a token, id: {self._id}, token: {self.token}")
+        if None in [self.id, self.token]:
+            raise ValueError(f"bypass solution should have an id and a token, id: {self.id}, token: {self.token}")
