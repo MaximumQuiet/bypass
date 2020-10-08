@@ -8,102 +8,64 @@ __version__ = "0.0.1"
 __licence__ = "Apache License 2.0"
 
 from abc import ABC, abstractmethod
-from enum import Enum
+from dataclasses import dataclass
 from io import BytesIO
 
 
-class ReCaptchaBypass(ABC):
-    """Bypass for Google ReCaptcha v2/v3"""
+class RecaptchaBypass(ABC):
+    """Bypass for Google reCaptcha."""
 
-    class ReCaptchaVersion(Enum):
-        V2 = "v2"
-        V3 = "v3"
+    def __init__(self, site_url, site_key) -> None:
+        """Default constructor, defines site URL and site key for all implementations."""
+        self._site_url = site_url
+        self._site_key = site_key
 
     @abstractmethod
-    def bypass(
-            self, page: str, key: str, version: ReCaptchaVersion = ReCaptchaVersion.V2, invisible: bool = False
-    ) -> "BypassSolution":
-        """Bypasses Google ReCaptcha v2/v3 and returns the solution
+    def bypass(self) -> "BypassSolution":
+        """Bypasses Google reCaptcha and returns the solution.
 
-        :param page: a page URL that has ReCaptcha
-        :param key: a site private key
-        :param version: ReCaptcha version
-        :param invisible: is ReCaptcha invisible? (has no interaction with user)
-        :return: solution
+        :return: Google reCaptcha solution
         """
         pass
 
 
-class ImageBypass:
-    """Bypass for simple image-text captcha"""
-
-    class ImageLanguage(Enum):
-        EN = "en"
-        RU = "ru"
+class TextBypass(ABC):
+    """Bypass for simple image with text captcha."""
 
     @abstractmethod
-    def bypass(self, image_stream: BytesIO, lang: ImageLanguage = ImageLanguage.EN) -> "BypassSolution":
-        """Grabs text from image-text captcha
+    def bypass(self, image: BytesIO) -> "BypassSolution":
+        """Grabs text from image-text captcha.
 
-        :param image_stream: image-text captcha
-        :param lang: text language
-        :return: solution
+        :param image: image-text captcha
+
+        :return: solution with text from the captcha image
         """
         pass
 
 
-class BypassSolution:
-    """Holder for different Bypass implementation results"""
-
-    def __init__(self, solution_id: str, token: str, manager: "BypassManager") -> None:
-        """Base constructor
-
-        TODO: add solution expiration? May be useful with ReCaptcha, as it has a limited lifetime.
-
-        Solution id and token shouldn't be None, as it comes from captcha service providers,
-        and we want to avoid incorrect values.
-
-        Also, the solution should have an ID for the reporting feature. However, reporting is just a contract,
-        and some Bypass implementations may not support this feature.
-
-        :param solution_id: solution id
-        :param token: bypass solution - token, text, etc
-        :param manager: callback to report captcha is invalid
-        """
-        if solution_id is None:
-            raise ValueError("Solution id can't be set to None")
-
-        if token is None:
-            raise ValueError("Solution token can't be set to None")
-
-        self._solution_id = solution_id
-        self._token = token
-        self._manager = manager
-
-    @property
-    def token(self) -> str:
-        return self._token
-
-    def report_valid(self) -> None:
-        """Reports solution with specified id is valid"""
-        self._manager.report_valid(self._solution_id)
-
-    def report_invalid(self) -> None:
-        """Reports solution with specified id is invalid"""
-        self._manager.report_invalid(self._solution_id)
-
-
-class BypassManager:
+class BypassManager(ABC):
     """Manager for interact with Bypass implementation account"""
 
     def get_balance(self) -> float:
         """Asks current balance of the Bypass implementation account"""
         pass
 
-    def report_valid(self, solution_id: str) -> None:
+    def report(self, solution: "BypassSolution", correct: bool = False) -> None:
         """Reports solution with specified id is valid"""
         pass
 
-    def report_invalid(self, solution_id: str) -> None:
-        """Reports solution with specified id is invalid"""
-        pass
+
+@dataclass
+class BypassSolution:
+    """Holder for Bypass solve result."""
+
+    _id: str
+    token: str
+
+    def __post_init__(self) -> None:
+        """Solution id and token shouldn't be None, as they comes from bypass providers
+        and may contain incorrect values.
+        """
+
+        if None in [self._id, self.token]:
+            raise ValueError(f"bypass solution should have an id and a token, id: {self._id}, token: {self.token}")
