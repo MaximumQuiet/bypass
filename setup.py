@@ -15,6 +15,8 @@ setup(
     packages=find_packages(),
     license=bypass.__licence__,
     platforms="any",
+    install_requires=["uplink~=0.9.1"],
+    extras_require={"dev": ["pytest", "pytest-dotenv", "black"]},
     classifiers=[
         "Development Status :: 1 - Planning",
         "License :: OSI Approved :: Apache Software License",
